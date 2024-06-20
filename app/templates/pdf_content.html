@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Conteudo do Curriculo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #333944;
+            color: #ffffff;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        h1 {
+            color: #3C99C1;
+        }
+
+        pre {
+            background-color: #444B55;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            overflow-x: auto;
+            white-space: pre-wrap;
+            width: 80%;
+            max-width: 800px;
+            margin: 0;
+        }
+
+
+        #home-link {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: #c4851a;
+            text-decoration: none;
+            font-size: 70px;
+            font-weight: bold;
+
+            
+        }
+
+        #home-link:hover {
+            color: #dbb168;
+        }
+
+    </style>
+</head>
+<body>
+    <a id="home-link" href="/"><</a>
+    <div>
+        <h1>Conteúdo: {{ filename }}</h1>
+        <pre>{{ content }}</pre>
+    </div>
+</body>
+</html>

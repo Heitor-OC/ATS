@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Upload PDF</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #333944;
+            color: #ffffff;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        h1, h2 {
+            color: #3C99C1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        form {
+            background-color: #444B55;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        input[type="file"], input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #3C99C1;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: #3C99C1;
+            color: #FFF;
+            font-size: 20px;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease; 
+            width: 100%;
+        }
+
+        button:hover {
+            background-color: #33799e;
+        }
+
+        #pdf-list {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        #pdf-list li {
+            background-color: #444B55;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+        }
+
+        #pdf-list li a {
+            color: #3C99C1;
+            text-decoration: none;
+            flex: 1; 
+            font-size: 18px;
+        }
+
+        #pdf-list li a:hover {
+            text-decoration: underline;
+        }
+
+        .view-button, .delete-button {
+            color: #ffffff;
+            margin-left: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            max-width: 50px;
+            max-height: 45px;
+        }
+
+        .view-button {
+            background-color: #28A745;
+            font-size: 14px;
+        }
+
+        .view-button:hover {
+            background-color: #218838;
+        }
+
+        .delete-button {
+            background-color: #FF5733;
+        }
+
+        .delete-button:hover {
+            background-color: #E74C3C;
+        }
+
+        .pdf-id {
+            color: #888888;
+            font-size: 19px;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <h1>Upload do Currículo</h1>
+        <form id="upload-form" enctype="multipart/form-data">
+            <input type="file" id="pdf-file" name="file" accept="application/pdf" required><br>
+            <label for="search-words">Lista de habilidades:</label><br>
+            <input type="text" id="search-words" name="search_words" required><br>
+            <button type="submit">Upload</button>
+        </form>
+        <h2>Currículos</h2>
+        <ul id="pdf-list"></ul>
+    </div>
+
+    <script>
+        let pdfCounter = 1;
+
+        // upload do PDF
+        document.getElementById("upload-form").onsubmit = async (event) => {
+            event.preventDefault();
+            const formData = new FormData();
+            const fileField = document.getElementById("pdf-file");
+            const searchWordsField = document.getElementById("search-words");
+
+            formData.append("file", fileField.files[0]);
+            formData.append("search_words", searchWordsField.value);
+
+            const response = await fetch("/uploadpdf/", {
+                method: "POST",
+                body: formData
+            });
+
+            const result = await response.json();
+            if (response.ok) {
+                loadPdfList();
+            } else {
+                alert("Error uploading PDF: " + result.detail);
+            }
+        };
+
+        async function loadPdfList() {
+            const response = await fetch("/pdfcontent/");
+            const pdfs = await response.json();
+            const pdfList = document.getElementById("pdf-list");
+            pdfList.innerHTML = "";
+            pdfCounter = 1;
+            pdfs.forEach(pdf => {
+                const li = document.createElement("li");
+
+                const pdfIdSpan = document.createElement("span");
+                pdfIdSpan.classList.add("pdf-id");
+                pdfIdSpan.id = `pdf-id-${pdfCounter}`;
+                pdfIdSpan.textContent = `${pdfCounter}.`;
+                li.appendChild(pdfIdSpan);
+
+                const link = document.createElement("a");
+                link.href = `/pdfcontent/${pdf.id}/search/results`;
+                link.target = "_blank";
+                link.textContent = pdf.filename;
+                li.appendChild(link);
+
+                // Botão de visualização
+                const viewButton = document.createElement("button");
+                viewButton.textContent = "Ver";
+                viewButton.classList.add("view-button");
+                viewButton.addEventListener("click", () => viewPdf(pdf.id));
+                li.appendChild(viewButton);
+
+                // Botão de exclusão
+                const deleteButton = document.createElement("button");
+                deleteButton.textContent = "X";
+                deleteButton.classList.add("delete-button");
+                deleteButton.addEventListener("click", () => deletePdf(pdf.id));
+                li.appendChild(deleteButton);
+
+                pdfList.appendChild(li);
+                pdfCounter++;
+            });
+        }
+
+        async function viewPdf(pdfId) {
+            window.open(`/pdfcontent/${pdfId}/display`, "_blank");
+        }
+
+        async function deletePdf(pdfId) {
+            if (confirm("Tem certeza que deseja excluir esse currículo?")) {
+                const response = await fetch(`/pdfcontent/${pdfId}`, {
+                    method: "DELETE"
+                });
+
+                if (response.ok) {
+                    loadPdfList();
+                } else {
+                    const result = await response.json();
+                    alert("Error deleting PDF: " + result.detail);
+                }
+            }
+        }
+
+        window.onload = loadPdfList;
+    </script>
+</body>
+</html>

@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Search Results</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #333944;
+            color: #ffffff;
+            margin: 20px 0; 
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        h1, h2 {
+            color: #3C99C1;
+        }
+
+        p {
+            background-color: #444B55;
+            padding: 10px;
+            border-radius: 8px;
+            width: 100%;
+            max-width: 600px;
+            box-sizing: border-box;
+            text-align: center;
+        }
+
+        #coherenceChart {
+            max-width: 300px;
+            max-height: 300px;
+            margin: 20px auto; 
+            background-color: #444B55;
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        .chart-legend {
+            color: #FFF !important;
+        }
+
+
+        #home-link {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: #c4851a;
+            text-decoration: none;
+            font-size: 70px;
+            font-weight: bold;
+
+            
+        }
+
+        #home-link:hover {
+            color: #dbb168;
+        }
+
+        #coherence-percentage, #grade {
+            font-size: 50px;
+        }
+
+        
+        #update-form {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        #update-form label {
+            color: #3C99C1;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        #update-form input[type="text"] {
+            width: 80%;
+            padding: 8px;
+            font-size: 18px;
+            border: 2px solid #3C99C1;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+
+        #update-form button {
+            padding: 10px 20px;
+            font-size: 18px;
+            background-color: #3C99C1;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        #update-form button:hover {
+            background-color: #265c77;
+        }
+    </style>
+</head>
+<body>
+    
+    <a id="home-link" href="/"><</a>
+    
+
+    <h1>Resultados</h1>
+    <h2>Nota</h2>
+    <h3 id="grade"></h3>
+    <h2>Gráfico de coerência</h2>
+    <canvas id="coherenceChart"></canvas>
+    <h2>Porcentagem de coerência</h2>
+    <h3 id="coherence-percentage"></h3>
+    <h2>Habilidades encontradas</h2>
+    <p id="skills-found"></p>
+    <h2>Habilidades não encontradas</h2>
+    <p id="skills-not-found"></p>
+
+    <script>
+        async function fetchSearchResults(pdfContentId) {
+            try {
+                const response = await fetch(`/pdfcontent/${pdfContentId}/search`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                const data = await response.json();
+        
+                const wordsFoundElement = document.getElementById("skills-found");
+                const wordsNotFoundElement = document.getElementById("skills-not-found");
+                const coherencePercentageElement = document.getElementById("coherence-percentage");
+                const gradeElement = document.getElementById("grade");
+        
+                const wordsFound = data.found;
+                const wordsNotFound = data.not_found;
+        
+                wordsFoundElement.innerHTML = wordsFound.join(", ");
+                wordsNotFoundElement.innerHTML = wordsNotFound.join(", ");
+        
+                const totalWords = wordsFound.length + wordsNotFound.length;
+                const coherencePercentage = totalWords > 0 ? (wordsFound.length / totalWords) * 100 : 0;
+                coherencePercentageElement.innerHTML = `${coherencePercentage.toFixed(2)}%`;
+        
+                let grade;
+                if (coherencePercentage > 90) {
+                    grade = 'A';
+                } else if (coherencePercentage > 80) {
+                    grade = 'B';
+                } else if (coherencePercentage > 70) {
+                    grade = 'C';
+                } else if (coherencePercentage > 60) {
+                    grade = 'D';
+                } else {
+                    grade = 'F';
+                }
+                gradeElement.innerHTML = grade;
+                
+                // Gráfico
+                const ctx = document.getElementById('coherenceChart').getContext('2d');
+                const coherenceChart = new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: ['Encontradas', 'Não Encontradas'],
+                        datasets: [{
+                            data: [wordsFound.length, wordsNotFound.length],
+                            backgroundColor: ['#4CAF50', '#F44336']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                                labels: {
+                                    color: '#FFF'
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(tooltipItem) {
+                                        let label = tooltipItem.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        label += tooltipItem.raw;
+                                        return label;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('Error:', error);
+                
+            }
+        }
+        
+      
+        const pdfContentId = "{{ pdf_content_id }}"; 
+        fetchSearchResults(pdfContentId);
+        
+    </script>
+</body>
+</html>
